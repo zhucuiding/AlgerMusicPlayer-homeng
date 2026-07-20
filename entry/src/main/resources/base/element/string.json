@@ -1,0 +1,7 @@
+{
+  "string": [
+    { "name": "module_desc", "value": "Alger Music Player HarmonyOS" },
+    { "name": "EntryAbility_desc", "value": "Alger Music Player" },
+    { "name": "EntryAbility_label", "value": "Alger Music" }
+  ]
+}

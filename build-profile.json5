@@ -1,0 +1,56 @@
+{
+  "app": {
+    "signingConfigs": [
+      {
+        "name": "default",
+        "type": "HarmonyOS",
+        "material": {
+          "certpath": "C:\\Users\\GhostCloud\\.ohos\\config\\default_AlgerMusicPlayer-homeng_EBscRkDW-SUUMZQss_ThJ9nIPnb32va2FLACAV0k6Ew=.cer",
+          "keyAlias": "debugKey",
+          "keyPassword": "0000001B9564BA44508B385DEA57595285C93EB26B2C4562D35BE50B364E3A3AA4C6E822C4B2E38E86C1CD",
+          "profile": "C:\\Users\\GhostCloud\\.ohos\\config\\default_AlgerMusicPlayer-homeng_EBscRkDW-SUUMZQss_ThJ9nIPnb32va2FLACAV0k6Ew=.p7b",
+          "signAlg": "SHA256withECDSA",
+          "storeFile": "C:\\Users\\GhostCloud\\.ohos\\config\\default_AlgerMusicPlayer-homeng_EBscRkDW-SUUMZQss_ThJ9nIPnb32va2FLACAV0k6Ew=.p12",
+          "storePassword": "0000001B3DD0565EE357A8157F3805EE4B71B44E4D616973AB05CCC07DCAC9270CC4AC7F0A41BF16F40A8E"
+        }
+      }
+    ],
+    "products": [
+      {
+        "name": "default",
+        "signingConfig": "default",
+        "targetSdkVersion": "6.1.1(24)",
+        "compatibleSdkVersion": "6.1.0(23)",
+        "runtimeOS": "HarmonyOS",
+        "buildOption": {
+          "strictMode": {
+            "caseSensitiveCheck": true,
+            "useNormalizedOHMUrl": true
+          }
+        }
+      }
+    ],
+    "buildModeSet": [
+      {
+        "name": "debug"
+      },
+      {
+        "name": "release"
+      }
+    ]
+  },
+  "modules": [
+    {
+      "name": "entry",
+      "srcPath": "./entry",
+      "targets": [
+        {
+          "name": "default",
+          "applyToProducts": [
+            "default"
+          ]
+        }
+      ]
+    }
+  ]
+}

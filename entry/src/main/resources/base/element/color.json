@@ -1,0 +1,15 @@
+{
+  "color": [
+    { "name": "page_background", "value": "#F7F8FA" },
+    { "name": "card_background", "value": "#FFFFFF" },
+    { "name": "text_primary", "value": "#1F2329" },
+    { "name": "text_secondary", "value": "#5B6068" },
+    { "name": "text_hint", "value": "#8A8F98" },
+    { "name": "accent", "value": "#D43C33" },
+    { "name": "chip_background", "value": "#F2F3F5" },
+    { "name": "border_color", "value": "#E5E6EB" },
+    { "name": "error_color", "value": "#C62828" },
+    { "name": "tab_bar_background", "value": "#FFFFFF" },
+    { "name": "start_window_background", "value": "#F7F8FA" }
+  ]
+}
