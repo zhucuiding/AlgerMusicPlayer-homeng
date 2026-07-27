@@ -596,7 +596,16 @@ struct Index {
       .bindSheet(this.showSleepDialog, this.SleepDialog(), { height: 300, dragBar: true })
       .bindSheet(this.showPlaylistDetail, this.PlaylistDetailPanel(), { height: SheetSize.LARGE, dragBar: true })
       .bindSheet(this.showSpeedPicker, this.SpeedPickerBuilder(), { height: 260, dragBar: true })
-      .bindSheet(this.showQueue, this.QueuePanel(), { height: SheetSize.LARGE, dragBar: true })
+
+      if (this.showQueue) {
+        Column() {
+          this.QueuePanel()
+        }
+        .width('100%')
+        .height('100%')
+        .backgroundColor($r(AppColorKey.pageBackground))
+        .zIndex(1000)
+      }
 
       if (this.toastMessage) {
         Text(this.toastMessage)

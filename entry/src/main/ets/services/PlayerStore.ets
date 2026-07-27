@@ -357,7 +357,7 @@ class PlayerStoreClass {
     if (index < 0 || index >= this.queue.length) {
       return;
     }
-    this.queue.splice(index, 1);
+    this.queue = this.queue.filter((song: Song, songIndex: number): boolean => songIndex !== index);
     if (this.queueIndex === index) {
       this.queueIndex = -1;
     } else if (this.queueIndex > index) {
