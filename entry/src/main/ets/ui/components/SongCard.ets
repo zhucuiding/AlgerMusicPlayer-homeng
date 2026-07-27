@@ -31,6 +31,13 @@ export struct SongCard {
 
   build() {
     Row({ space: Space.lg }) {
+      Button('▶')
+        .type(ButtonType.Circle)
+        .fontSize(13)
+        .fontColor(Color.White)
+        .width(36).height(36)
+        .backgroundColor($r(AppColorKey.accent))
+        .onClick(() => playerStore.playSong(this.song))
       Column({ space: Space.xs }) {
         Text(this.song.name)
           .fontSize(15)
@@ -78,7 +85,6 @@ export struct SongCard {
     .backgroundColor($r(AppColorKey.cardBackground))
     .borderRadius(Radius.md)
     .border({ width: CardBorder.width, color: $r(AppColorKey.borderColor) })
-    .onClick(() => playerStore.playSong(this.song))
   }
 }
 

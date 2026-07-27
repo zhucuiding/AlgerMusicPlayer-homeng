@@ -20,7 +20,6 @@ struct Index {
   @State newPlaylistName: string = '';
   @State showSleepDialog: boolean = false;
   @State sleepMinutes: number = 30;
-  @State showEqualizer: boolean = false;
   @State storeVersion: number = 0;
   @State showPlaylistDetail: boolean = false;
   @State playlistDetailName: string = '';
@@ -30,6 +29,7 @@ struct Index {
   @State toastMessage: string = '';
   @State pendingSearchKeyword: string = '';
   @State pendingSearchVersion: number = 0;
+  @State selectedMineSection: number = 3;
 
   aboutToAppear(): void {
     const context = getContext(this) as common.UIAbilityContext;
@@ -73,6 +73,14 @@ struct Index {
 
   private artistNames(song: Song): string {
     return song.artists.map((artist) => artist.name).join(' / ');
+  }
+
+  private openLocalPlaylist(id: string, name: string, songs: Song[]): void {
+    this.showPlaylistDetail = true;
+    this.playlistDetailId = id;
+    this.playlistDetailName = name;
+    this.playlistDetailSongs = songs;
+    this.playlistDetailLoading = false;
   }
 
   @Builder
@@ -121,6 +129,7 @@ struct Index {
               .backgroundColor($r(AppColorKey.cardBackground))
               .borderRadius(Radius.md)
               .border({ width: CardBorder.width, color: $r(AppColorKey.borderColor) })
+              .onClick(() => this.openLocalPlaylist(pl.id, pl.name, pl.songs))
             }
           }, (pl: Playlist) => pl.id)
         }
@@ -169,21 +178,54 @@ struct Index {
       .borderRadius(Radius.md)
       .border({ width: CardBorder.width, color: $r(AppColorKey.borderColor) })
 
-      if (playerStore.history.length > 0) {
-        Text('最近播放').fontSize(16).fontWeight(FontWeight.Medium).fontColor($r(AppColorKey.textPrimary)).width('100%')
+      Row({ space: Space.sm }) {
+        this.MineSectionButton('喜欢', 0, playerStore.favorites.length);
+        this.MineSectionButton('收藏', 1, playerStore.collection.length);
+        this.MineSectionButton('队列', 2, playerStore.queue.length);
+        this.MineSectionButton('历史', 3, playerStore.history.length);
+      }
+      .width('100%')
+
+      if (this.mineSectionSongs().length > 0) {
         List({ space: Space.sm }) {
-          ForEach(playerStore.history.slice(0, 20), (entry: HistoryEntry) => {
+          ForEach(this.mineSectionSongs(), (song: Song) => {
             ListItem() {
-              SongCard({ song: entry.song })
+              SongCard({ song: song })
             }
-          }, (entry: HistoryEntry) => `${entry.song.source}:${entry.song.id}:${entry.playedAt}`)
+          }, (song: Song) => songKey(song))
         }
         .width('100%')
         .layoutWeight(1)
+      } else {
+        Text('这里还没有歌曲').fontSize(13).fontColor($r(AppColorKey.textHint)).width('100%').textAlign(TextAlign.Center).padding(40)
       }
     }
     .width('100%')
     .padding({ left: Space.lg, right: Space.lg, top: Space.md })
+  }
+
+  private mineSectionSongs(): Song[] {
+    if (this.selectedMineSection === 0) {
+      return playerStore.favorites;
+    }
+    if (this.selectedMineSection === 1) {
+      return playerStore.collection;
+    }
+    if (this.selectedMineSection === 2) {
+      return playerStore.queue;
+    }
+    return playerStore.history.slice(0, 50).map((entry: HistoryEntry): Song => entry.song);
+  }
+
+  @Builder
+  MineSectionButton(label: string, index: number, count: number) {
+    Button(`${label} ${count}`)
+      .layoutWeight(1)
+      .height(34)
+      .fontSize(11)
+      .fontColor(this.selectedMineSection === index ? Color.White : $r(AppColorKey.textSecondary))
+      .backgroundColor(this.selectedMineSection === index ? $r(AppColorKey.accent) : $r(AppColorKey.chipBackground))
+      .onClick(() => this.selectedMineSection = index)
   }
 
   @Builder
@@ -215,17 +257,6 @@ struct Index {
           Button('设置').fontSize(11).fontColor(Color.White).backgroundColor($r(AppColorKey.textPrimary)).height(28)
             .onClick(() => this.showSleepDialog = true)
         }
-      }
-      .width('100%')
-      .padding(Space.md)
-      .backgroundColor($r(AppColorKey.cardBackground))
-      .borderRadius(Radius.md)
-      .border({ width: CardBorder.width, color: $r(AppColorKey.borderColor) })
-
-      // 均衡器(开发中,bug #2:禁用以避免假实现误导)
-      Row() {
-        Text('均衡器').fontSize(14).fontColor($r(AppColorKey.textPrimary)).layoutWeight(1)
-        Text('开发中').fontSize(11).fontColor($r(AppColorKey.textHint))
       }
       .width('100%')
       .padding(Space.md)
@@ -512,7 +543,6 @@ struct Index {
       .backgroundColor($r(AppColorKey.pageBackground))
       .bindSheet(this.showNewPlaylistDialog, this.NewPlaylistDialog(), { height: 200, dragBar: true })
       .bindSheet(this.showSleepDialog, this.SleepDialog(), { height: 300, dragBar: true })
-      .bindSheet(this.showEqualizer, this.EqualizerPanel(), { height: 400, dragBar: true })
       .bindSheet(this.showPlaylistDetail, this.PlaylistDetailPanel(), { height: SheetSize.LARGE, dragBar: true })
       .bindSheet(this.showSpeedPicker, this.SpeedPickerBuilder(), { height: 260, dragBar: true })
 
@@ -566,17 +596,4 @@ struct Index {
     .padding(Space.xl)
   }
 
-  @Builder
-  EqualizerPanel() {
-    Column({ space: Space.lg }) {
-      Text('均衡器').fontSize(18).fontWeight(FontWeight.Bold).fontColor($r(AppColorKey.textPrimary))
-      Text('该功能正在开发中,暂不可用。').fontSize(13).fontColor($r(AppColorKey.textHint)).width('100%')
-      Button('关闭')
-        .width('100%').height(40)
-        .fontColor($r(AppColorKey.textSecondary)).backgroundColor($r(AppColorKey.chipBackground))
-        .onClick(() => this.showEqualizer = false)
-    }
-    .width('100%')
-    .padding(Space.xl)
-  }
 }

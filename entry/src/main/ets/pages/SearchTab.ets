@@ -49,9 +49,9 @@ export struct SearchTab {
       this.searchMessage = '请输入歌曲或歌手名称';
       return;
     }
-    await playerStore.addSearchHistory(kw);
     this.searchLoading = true;
     this.searchMessage = '正在搜索…';
+    this.recordSearchHistory(kw);
     try {
       const songs = await musicApi.search(kw);
       if (generation !== this.searchGeneration) {
@@ -69,6 +69,15 @@ export struct SearchTab {
       if (generation === this.searchGeneration) {
         this.searchLoading = false;
       }
+    }
+  }
+
+  private async recordSearchHistory(keyword: string): Promise<void> {
+    try {
+      await playerStore.addSearchHistory(keyword);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : `${error}`;
+      console.error('save search history failed: ' + msg);
     }
   }
 

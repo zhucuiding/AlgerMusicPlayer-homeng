@@ -36,6 +36,7 @@ class PlayerStoreClass {
 
   private listeners: Set<PlayerStoreListener> = new Set();
   private playGeneration: number = 0;
+  private lastProgressNotify: number = 0;
 
   constructor() {
     audioPlayer.setListener((state: string) => {
@@ -46,12 +47,15 @@ class PlayerStoreClass {
       this.notify();
     });
     audioPlayer.setProgressListener((pos: number, dur: number) => {
+      const durationChanged = dur !== this.duration;
       this.position = pos;
       this.duration = dur;
       const oldIndex = this.currentLyricIndex;
       this.updateLyricIndex();
-      // 仅在歌词行变化或时长变化时通知，避免每秒高频重绘
-      if (oldIndex !== this.currentLyricIndex || dur !== this.duration) {
+      const now = Date.now();
+      // 进度条至少每 500ms 更新一次，同时避免 AVPlayer 高频回调引起整页连续重绘。
+      if (oldIndex !== this.currentLyricIndex || durationChanged || now - this.lastProgressNotify >= 500) {
+        this.lastProgressNotify = now;
         this.notify();
       }
     });
@@ -142,6 +146,8 @@ class PlayerStoreClass {
     this.lyricLines = [];
     this.currentLyricIndex = -1;
     this.notify();
+    // 歌词与播放地址彼此独立，并行请求，避免播放开始后才加载歌词。
+    const lyricPromise = this.loadLyric(song, generation);
 
     try {
       const url = await musicApi.getSongUrl(song, this.quality);
@@ -160,7 +166,7 @@ class PlayerStoreClass {
       }
       await audioPlayer.setVolume(this.volume);
       this.history = await localMusicLibrary.addHistory(song);
-      this.loadLyric(song);
+      await lyricPromise;
       this.notify();
     } catch (error) {
       if (generation === this.playGeneration) {
@@ -171,14 +177,19 @@ class PlayerStoreClass {
     }
   }
 
-  private async loadLyric(song: Song): Promise<void> {
+  private async loadLyric(song: Song, generation: number): Promise<void> {
     try {
       const result = await lyricService.getLyric(song);
+      if (generation !== this.playGeneration || !this.currentSong || songKey(this.currentSong) !== songKey(song)) {
+        return;
+      }
       this.lyricLines = result.lines;
       this.updateLyricIndex();
       this.notify();
     } catch (error) {
-      this.lyricLines = [];
+      if (generation === this.playGeneration) {
+        this.lyricLines = [];
+      }
     }
   }
 

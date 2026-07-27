@@ -24,6 +24,7 @@ import {
 const API_BASE = 'https://music-api.gdstudio.xyz/api.php';
 const REQUEST_TIMEOUT = 15000;
 const SEARCH_SOURCES: string[] = ['netease', 'joox', 'tidal'];
+const SEARCH_CACHE_MAX = 20;
 
 export interface QualityMap {
   standard: number;
@@ -146,6 +147,41 @@ export interface HotSearchResponseItem {
 
 export class MusicApi {
   async search(keywords: string, source?: string): Promise<Song[]> {
+    const cacheKey = `${source ?? 'auto'}:${keywords.trim().toLowerCase()}`;
+    const cached = this.searchCache.get(cacheKey);
+    if (cached) {
+      this.searchCache.delete(cacheKey);
+      this.searchCache.set(cacheKey, cached);
+      return cached;
+    }
+    const pending = this.searchRequests.get(cacheKey);
+    if (pending) {
+      return pending;
+    }
+    const request = this.searchFromSources(keywords, source);
+    this.searchRequests.set(cacheKey, request);
+    try {
+      const songs = await request;
+      if (songs.length > 0) {
+        while (this.searchCache.size >= SEARCH_CACHE_MAX) {
+          const oldest = this.searchCache.keys().next().value as string | undefined;
+          if (!oldest) {
+            break;
+          }
+          this.searchCache.delete(oldest);
+        }
+        this.searchCache.set(cacheKey, songs);
+      }
+      return songs;
+    } finally {
+      this.searchRequests.delete(cacheKey);
+    }
+  }
+
+  private searchCache: Map<string, Song[]> = new Map();
+  private searchRequests: Map<string, Promise<Song[]>> = new Map();
+
+  private async searchFromSources(keywords: string, source?: string): Promise<Song[]> {
     const sources = source ? [source] : SEARCH_SOURCES;
     let lastError: Error | undefined;
     for (const src of sources) {
@@ -167,19 +203,25 @@ export class MusicApi {
   }
 
   async getSongUrl(song: Song, quality: string = 'high'): Promise<string> {
-    const br = qualityBitrate(quality);
-    const result = await this.getJson<GdSongUrlResponse>(
-      `?types=url&source=${encodeURIComponent(song.source)}&id=${encodeURIComponent(song.id)}&br=${br}`
-    );
-    if (!result.url) {
-      throw new Error('该音源没有返回可用播放地址');
+    const requested = qualityBitrate(quality);
+    const bitrates: number[] = requested === QUALITY_BR.lossless ?
+      [QUALITY_BR.lossless, QUALITY_BR.high, QUALITY_BR.standard] :
+      requested === QUALITY_BR.high ? [QUALITY_BR.high, QUALITY_BR.standard] : [QUALITY_BR.standard];
+    let lastError: Error | undefined;
+    for (const br of bitrates) {
+      try {
+        const result = await this.getJson<GdSongUrlResponse>(
+          `?types=url&source=${encodeURIComponent(song.source)}&id=${encodeURIComponent(song.id)}&br=${br}`
+        );
+        if (result.url && (result.url.startsWith('http://') || result.url.startsWith('https://'))) {
+          return result.url;
+        }
+        lastError = new Error('该音源没有返回可用播放地址');
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error(`${error}`);
+      }
     }
-    // 修复 bug #11:许多第三方音源只返回 http 直链,原先强制要求 https 会导致大量歌曲
-    // "搜得到但点播放就失败"。现放开 http 校验,明文流量由 module.json5 的网络安全配置放行。
-    if (!result.url.startsWith('http://') && !result.url.startsWith('https://')) {
-      throw new Error('音源返回了非法的播放地址');
-    }
-    return result.url;
+    throw lastError ?? new Error('无法获取播放地址');
   }
 
   async getLyric(song: Song): Promise<LyricResult> {
