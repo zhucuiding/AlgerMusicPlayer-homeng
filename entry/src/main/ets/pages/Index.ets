@@ -166,6 +166,7 @@ struct Index {
         }
         .layoutWeight(1)
         .alignItems(HorizontalAlign.Center)
+        .onClick(() => this.showQueue = true)
         Column({ space: 2 }) {
           Text(`${playerStore.history.length}`).fontSize(20).fontWeight(FontWeight.Bold).fontColor($r(AppColorKey.accent))
           Text('历史').fontSize(11).fontColor($r(AppColorKey.textHint))
