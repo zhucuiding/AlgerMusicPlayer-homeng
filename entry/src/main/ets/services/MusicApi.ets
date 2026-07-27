@@ -180,6 +180,7 @@ export class MusicApi {
 
   private searchCache: Map<string, Song[]> = new Map();
   private searchRequests: Map<string, Promise<Song[]>> = new Map();
+  private urlCache: Map<string, string> = new Map();
 
   private async searchFromSources(keywords: string, source?: string): Promise<Song[]> {
     const sources = source ? [source] : SEARCH_SOURCES;
@@ -203,6 +204,11 @@ export class MusicApi {
   }
 
   async getSongUrl(song: Song, quality: string = 'high'): Promise<string> {
+    const cacheKey = `${song.source}:${song.id}:${quality}`;
+    const cachedUrl = this.urlCache.get(cacheKey);
+    if (cachedUrl) {
+      return cachedUrl;
+    }
     const requested = qualityBitrate(quality);
     const bitrates: number[] = requested === QUALITY_BR.lossless ?
       [QUALITY_BR.lossless, QUALITY_BR.high, QUALITY_BR.standard] :
@@ -214,6 +220,7 @@ export class MusicApi {
           `?types=url&source=${encodeURIComponent(song.source)}&id=${encodeURIComponent(song.id)}&br=${br}`
         );
         if (result.url && (result.url.startsWith('http://') || result.url.startsWith('https://'))) {
+          this.urlCache.set(cacheKey, result.url);
           return result.url;
         }
         lastError = new Error('该音源没有返回可用播放地址');

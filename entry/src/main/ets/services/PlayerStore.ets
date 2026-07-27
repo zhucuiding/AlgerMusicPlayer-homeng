@@ -165,8 +165,8 @@ class PlayerStoreClass {
         await audioPlayer.setSpeed(this.playbackSpeed);
       }
       await audioPlayer.setVolume(this.volume);
-      this.history = await localMusicLibrary.addHistory(song);
-      await lyricPromise;
+      // 播放已经启动，历史和歌词不能阻塞当前播放状态的反馈。
+      this.persistHistory(song, generation);
       this.notify();
     } catch (error) {
       if (generation === this.playGeneration) {
@@ -175,6 +175,17 @@ class PlayerStoreClass {
         this.notify();
       }
     }
+  }
+
+  private persistHistory(song: Song, generation: number): void {
+    localMusicLibrary.addHistory(song).then((history: HistoryEntry[]) => {
+      if (generation === this.playGeneration) {
+        this.history = history;
+        this.notify();
+      }
+    }).catch(() => {
+      // 历史记录失败不影响当前播放。
+    });
   }
 
   private async loadLyric(song: Song, generation: number): Promise<void> {

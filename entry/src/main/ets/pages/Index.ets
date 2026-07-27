@@ -16,6 +16,7 @@ struct Index {
   @State currentIndex: number = 0;
   @State showFullPlayer: boolean = false;
   @State showSpeedPicker: boolean = false;
+  @State showQueue: boolean = false;
   @State showNewPlaylistDialog: boolean = false;
   @State newPlaylistName: string = '';
   @State showSleepDialog: boolean = false;
@@ -364,6 +365,8 @@ struct Index {
         Button(playerStore.playerState === 'playing' ? '暂停' : '播放')
           .fontSize(12).fontColor(Color.White).backgroundColor($r(AppColorKey.accent)).height(32)
           .onClick(() => playerStore.togglePlay())
+        Button('队列').fontSize(11).fontColor($r(AppColorKey.textPrimary)).backgroundColor($r(AppColorKey.chipBackground)).height(32)
+          .onClick(() => this.showQueue = true)
         Button('下一首').fontSize(11).fontColor($r(AppColorKey.textPrimary)).backgroundColor($r(AppColorKey.chipBackground)).height(32)
           .onClick(() => playerStore.playNext())
       }
@@ -375,6 +378,52 @@ struct Index {
       .shadow({ radius: 8, color: '#1A000000', offsetX: 0, offsetY: -1 })
       .onClick(() => this.showFullPlayer = true)
     }
+  }
+
+  @Builder
+  QueuePanel() {
+    Column({ space: Space.md }) {
+      Row() {
+        Text('播放列表').fontSize(18).fontWeight(FontWeight.Bold).fontColor($r(AppColorKey.textPrimary))
+        Blank().layoutWeight(1)
+        Text(`${playerStore.queue.length} 首`).fontSize(12).fontColor($r(AppColorKey.textHint))
+      }
+      .width('100%')
+      if (playerStore.queue.length === 0) {
+        Text('播放歌曲后会自动加入播放列表').fontSize(13).fontColor($r(AppColorKey.textHint)).padding(30)
+      } else {
+        List({ space: Space.sm }) {
+          ForEach(playerStore.queue, (song: Song, index: number) => {
+            ListItem() {
+              Row({ space: Space.sm }) {
+                Text(index === playerStore.queueIndex ? '正在播放' : `${index + 1}`)
+                  .fontSize(11)
+                  .fontColor(index === playerStore.queueIndex ? $r(AppColorKey.accent) : $r(AppColorKey.textHint))
+                  .width(48)
+                Column({ space: 2 }) {
+                  Text(song.name).fontSize(14).fontColor($r(AppColorKey.textPrimary)).maxLines(1)
+                  Text(this.artistNames(song)).fontSize(11).fontColor($r(AppColorKey.textHint)).maxLines(1)
+                }
+                .layoutWeight(1)
+                .alignItems(HorizontalAlign.Start)
+                Button('播放').fontSize(11).height(30).backgroundColor($r(AppColorKey.accent)).fontColor(Color.White)
+                  .onClick(() => playerStore.playSong(song))
+                Button('移除').fontSize(11).height(30).backgroundColor($r(AppColorKey.chipBackground)).fontColor($r(AppColorKey.textSecondary))
+                  .onClick(() => playerStore.removeFromQueue(index))
+              }
+              .width('100%')
+              .padding(Space.sm)
+            }
+          }, (song: Song) => songKey(song))
+        }
+        .width('100%')
+        .layoutWeight(1)
+      }
+      Button('关闭').width('100%').height(40).onClick(() => this.showQueue = false)
+    }
+    .width('100%')
+    .height('100%')
+    .padding(Space.xl)
   }
 
   @Builder
@@ -545,6 +594,7 @@ struct Index {
       .bindSheet(this.showSleepDialog, this.SleepDialog(), { height: 300, dragBar: true })
       .bindSheet(this.showPlaylistDetail, this.PlaylistDetailPanel(), { height: SheetSize.LARGE, dragBar: true })
       .bindSheet(this.showSpeedPicker, this.SpeedPickerBuilder(), { height: 260, dragBar: true })
+      .bindSheet(this.showQueue, this.QueuePanel(), { height: SheetSize.LARGE, dragBar: true })
 
       if (this.toastMessage) {
         Text(this.toastMessage)
