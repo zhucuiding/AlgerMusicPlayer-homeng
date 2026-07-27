@@ -22,6 +22,9 @@ struct Index {
   @State showSleepDialog: boolean = false;
   @State sleepMinutes: number = 30;
   @State storeVersion: number = 0;
+  @State miniPlayerVisible: boolean = false;
+  @State miniSongName: string = '';
+  @State miniArtistName: string = '';
   @State showPlaylistDetail: boolean = false;
   @State playlistDetailName: string = '';
   @State playlistDetailSongs: Song[] = [];
@@ -36,6 +39,10 @@ struct Index {
     const context = getContext(this) as common.UIAbilityContext;
     playerStore.subscribe(() => {
       this.storeVersion++;
+      const song = playerStore.currentSong;
+      this.miniPlayerVisible = song !== null;
+      this.miniSongName = song ? song.name : '';
+      this.miniArtistName = song ? this.artistNames(song) : '';
     });
     playerStore.initialize(context).then(() => {
       // 首页数据由 HomeTab 自加载,此处无需额外触发
@@ -350,14 +357,14 @@ struct Index {
 
   @Builder
   MiniPlayer() {
-    if (playerStore.currentSong && this.storeVersion >= 0) {
+    if (this.miniPlayerVisible) {
       Row({ space: Space.md }) {
         Text('🎵').fontSize(24)
         Column({ space: 2 }) {
-          Text(playerStore.currentSong!.name)
+          Text(this.miniSongName)
             .fontSize(14).fontWeight(FontWeight.Medium).fontColor($r(AppColorKey.textPrimary)).maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
-          Text(this.artistNames(playerStore.currentSong!))
+          Text(this.miniArtistName)
             .fontSize(11).fontColor($r(AppColorKey.textHint)).maxLines(1)
             .textOverflow({ overflow: TextOverflow.Ellipsis })
         }
