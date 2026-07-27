@@ -585,6 +585,7 @@ struct Index {
           this.MiniPlayer()
         }
         .width('100%')
+        .height(96)
         .padding({ left: Space.sm, right: Space.sm, bottom: Space.xs })
       }
       .width('100%')
